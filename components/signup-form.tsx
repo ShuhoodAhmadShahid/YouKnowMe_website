@@ -62,12 +62,14 @@ export default function SignupForm({ isLoading: externalLoading = false }: Signu
         password,
         companyName,
       })
+      console.log("Signup result:", result)
 
       if (result.error) {
         setError(result.error)
         return
       }
 
+      console.log("Redirecting to /auth/check-email")
       router.push("/auth/check-email")
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
