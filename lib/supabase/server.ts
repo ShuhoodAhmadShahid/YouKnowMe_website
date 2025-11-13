@@ -1,28 +1,32 @@
-import { createClient as createSupabaseClient } from "@supabase/supabase-js"
-import { cookies } from "next/headers"
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
-let client: ReturnType<typeof createSupabaseClient> | null = null
+export const createClient = () => {
+  const cookieStore = cookies()
 
-export async function createClient() {
-  if (client) return client
-
-  const cookieStore = await cookies()
-
-  client = createSupabaseClient(
+  return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  ).auth.onAuthStateChange((event, session) => {
-    if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
-      cookieStore.set("supabase-auth-token", session?.access_token ?? "", {
-        path: "/",
-        maxAge: 60 * 60 * 24 * 30, // 30 days
-      })
-      cookieStore.set("supabase-auth-refresh-token", session?.refresh_token ?? "", {
-        path: "/",
-        maxAge: 60 * 60 * 24 * 30, // 30 days
-      })
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+        set(name: string, value: string, options: any) {
+          try {
+            cookieStore.set({ name, value, ...options })
+          } catch (error) {
+            console.error('Cookie set error:', error)
+          }
+        },
+        remove(name: string, options: any) {
+          try {
+            cookieStore.set({ name, value: '', ...options })
+          } catch (error) {
+            console.error('Cookie remove error:', error)
+          }
+        },
+      },
     }
-  })
-
-  return client
+  )
 }
